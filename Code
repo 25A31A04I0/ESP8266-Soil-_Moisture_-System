@@ -1,0 +1,608 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IR Sensor Dashboard · Firebase Realtime</title>
+    <!-- Font Awesome & Google Fonts for clean styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: #f6f9fc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .dashboard {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 40px -12px rgba(0, 20, 30, 0.25);
+            padding: 2rem 2.5rem;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .title-section h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            color: #0b2b3b;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .title-section h1 i {
+            color: #0f7b9e;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #5f7d8c;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .connection-badge {
+            background: #e3f2fd;
+            border-radius: 100px;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #0f7b9e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid #b8e2f2;
+            white-space: nowrap;
+        }
+
+        .connection-badge i {
+            font-size: 0.7rem;
+            color: #21a179;
+        }
+
+        .connection-badge.offline i {
+            color: #b91c1c;
+        }
+
+        .connection-badge.offline {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .live-status {
+            background: #e8f5e9;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e7e34;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .live-status .dot {
+            width: 8px;
+            height: 8px;
+            background: #21a179;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2.2rem;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 1.8rem;
+            padding: 1.5rem 1.5rem 1.2rem 1.5rem;
+            box-shadow: 0 10px 20px -10px rgba(0, 40, 60, 0.12);
+            border: 1px solid #e9f0f5;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 28px -12px rgba(0, 70, 100, 0.2);
+            border-color: #cde3ee;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header i {
+            font-size: 1.3rem;
+            width: 36px;
+            height: 36px;
+            background: #ecf7fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: #0f7b9e;
+        }
+
+        .card-header span {
+            font-weight: 500;
+            color: #446b7a;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        .card-value {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #0b2b3b;
+            line-height: 1.2;
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+
+        .card-unit {
+            font-size: 0.9rem;
+            color: #7799a8;
+            font-weight: 400;
+            margin-left: 0.25rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.9rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            width: fit-content;
+            margin-top: 0.5rem;
+        }
+
+        .status-detected {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .status-notdetected {
+            background: #e6f7e6;
+            color: #0e6b3e;
+            border: 1px solid #b8e6b8;
+        }
+
+        .sensor-icon {
+            font-size: 2rem;
+            margin-top: 0.2rem;
+            color: #9bb7c5;
+            align-self: flex-end;
+            opacity: 0.7;
+        }
+
+        /* timestamp panel */
+        .timestamp-panel {
+            background: #f3f8fc;
+            border-radius: 1.6rem;
+            padding: 1.2rem 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border: 1px solid #e0eef7;
+            margin-bottom: 1.8rem;
+        }
+
+        .timestamp-label {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            color: #2e627b;
+            font-weight: 500;
+        }
+
+        .timestamp-label i {
+            font-size: 1.4rem;
+            color: #0f7b9e;
+        }
+
+        .timestamp-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #124257;
+            background: #ffffff;
+            padding: 0.25rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #cde3ee;
+            letter-spacing: 0.5px;
+        }
+
+        .refresh-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #5f7d8c;
+        }
+
+        .refresh-btn {
+            background: white;
+            border: 1px solid #cde3ee;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #0f7b9e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.15s;
+        }
+
+        .refresh-btn:hover {
+            background: #e2f0f7;
+            border-color: #9ecfdf;
+            transform: scale(0.97);
+        }
+
+        .refresh-btn i {
+            font-size: 0.9rem;
+        }
+
+        /* error message */
+        .error-message {
+            background: #fff3f3;
+            border-left: 6px solid #d94a4a;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            color: #a13030;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .error-message i {
+            font-size: 1.3rem;
+            color: #d94a4a;
+        }
+
+        /* responsive */
+        @media (max-width: 750px) {
+            .dashboard {
+                padding: 1.5rem;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .title-section h1 {
+                font-size: 1.5rem;
+            }
+            .timestamp-panel {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .timestamp-value {
+                font-size: 1.2rem;
+            }
+        }
+
+        .footer-note {
+            font-size: 0.75rem;
+            color: #95b1c0;
+            text-align: center;
+            margin-top: 1.5rem;
+            border-top: 1px solid #e7f0f6;
+            padding-top: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .footer-note i {
+            color: #0f7b9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="title-section">
+                <h1>
+                    <i class="fas fa-microchip"></i> IR Sensor Dashboard
+                </h1>
+                <div class="subtitle">
+                    <i class="fas fa-cloud-upload-alt"></i> Firebase Realtime · ESP8266
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.8rem; align-items: center;">
+                <div class="live-status" id="liveIndicator">
+                    <span class="dot"></span> LIVE
+                </div>
+                <div class="connection-badge" id="connectionBadge">
+                    <i class="fas fa-circle" id="connectionIcon"></i>
+                    <span id="connectionText">Connecting...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main sensor cards -->
+        <div class="cards-grid">
+            <!-- Digital value card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-signal"></i>
+                    <span>DIGITAL VALUE</span>
+                </div>
+                <div class="card-value" id="irValueDisplay">—</div>
+                <div style="font-size:0.8rem; color:#86a3b2;">0 = LOW · 1 = HIGH</div>
+                <i class="fas fa-wave-square sensor-icon"></i>
+            </div>
+
+            <!-- Status card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i>
+                    <span>STATUS</span>
+                </div>
+                <div class="card-value" id="statusDisplay" style="font-size: 2rem;">—</div>
+                <div id="statusBadgeContainer">
+                    <!-- dynamic badge -->
+                </div>
+                <i class="fas fa-eye sensor-icon"></i>
+            </div>
+
+            <!-- Timestamp card (millis from device) -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clock"></i>
+                    <span>DEVICE UPTIME</span>
+                </div>
+                <div class="card-value" id="timestampDisplay">—</div>
+                <div style="font-size:0.8rem; color:#86a3b2;">millis() since boot</div>
+                <i class="fas fa-hourglass-half sensor-icon"></i>
+            </div>
+        </div>
+
+        <!-- detailed timestamp row -->
+        <div class="timestamp-panel">
+            <div class="timestamp-label">
+                <i class="fas fa-stopwatch"></i>
+                <span>last timestamp</span>
+            </div>
+            <div class="timestamp-value" id="timestampDetailed">—</div>
+            <div class="refresh-info">
+                <span id="lastUpdated">waiting for data...</span>
+                <button class="refresh-btn" id="manualRefresh">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- error message container (hidden by default) -->
+        <div id="errorContainer" style="display: none;" class="error-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText">Firebase error</span>
+        </div>
+
+        <!-- footer -->
+        <div class="footer-note">
+            <span><i class="fas fa-database"></i> /IR_Sensor/value · /status · /timestamp</span>
+            <span><i class="fas fa-wifi"></i> ESP8266 · IR obstacle sensor</span>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (compat version for simplicity) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        (function() {
+            // -------- Firebase configuration (from ESP8266 code) --------
+            const firebaseConfig = {
+                apiKey: "AIzaSyARTESdX3mpO7esb3xIznAoUWaLDpcj5LQ",
+                databaseURL: "https://aqua-harvest-21e9f-default-rtdb.firebaseio.com/"
+            };
+
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+
+            // -------- DOM references --------
+            const irValueDisplay = document.getElementById('irValueDisplay');
+            const statusDisplay = document.getElementById('statusDisplay');
+            const statusBadgeContainer = document.getElementById('statusBadgeContainer');
+            const timestampDisplay = document.getElementById('timestampDisplay');
+            const timestampDetailed = document.getElementById('timestampDetailed');
+            const lastUpdatedSpan = document.getElementById('lastUpdated');
+            const connectionBadge = document.getElementById('connectionBadge');
+            const connectionText = document.getElementById('connectionText');
+            const connectionIcon = document.getElementById('connectionIcon');
+            const liveIndicator = document.getElementById('liveIndicator');
+            const errorContainer = document.getElementById('errorContainer');
+            const errorText = document.getElementById('errorText');
+
+            // Manual refresh button – not necessary for realtime but nice for UX
+            document.getElementById('manualRefresh').addEventListener('click', () => {
+                // Re-attach listener (or just re-fetch) – but realtime listener already active.
+                // We'll just visually refresh timestamp of last update without breaking anything.
+                updateLastUpdatedTime(new Date());
+                // Also could force read once if needed, but not necessary.
+                // For better feedback, we can just show a quick message.
+                lastUpdatedSpan.textContent = 'refreshed just now';
+                setTimeout(() => {
+                    if (lastUpdatedSpan.textContent === 'refreshed just now') {
+                        lastUpdatedSpan.textContent = 'listening...';
+                    }
+                }, 1500);
+            });
+
+            // Helper to format timestamp (millis as number, but we also keep date)
+            function formatMillis(millis) {
+                if (millis === undefined || millis === null) return '—';
+                return Number(millis).toLocaleString();
+            }
+
+            // Helper to update last updated label (with local time)
+            function updateLastUpdatedTime(date) {
+                if (!date) return;
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                lastUpdatedSpan.textContent = `updated at ${timeStr}`;
+            }
+
+            // Update connection badge based on firebase .info/connected
+            const connectedRef = database.ref('.info/connected');
+            connectedRef.on('value', (snap) => {
+                const connected = snap.val() === true;
+                if (connected) {
+                    connectionBadge.classList.remove('offline');
+                    connectionText.textContent = 'Connected';
+                    connectionIcon.className = 'fas fa-circle';
+                    connectionIcon.style.color = '#21a179';
+                    liveIndicator.style.display = 'flex';
+                } else {
+                    connectionBadge.classList.add('offline');
+                    connectionText.textContent = 'Offline';
+                    connectionIcon.className = 'fas fa-circle';
+                    connectionIcon.style.color = '#b91c1c';
+                    liveIndicator.style.display = 'none';
+                }
+            });
+
+            // -------- Listen to /IR_Sensor (whole node) --------
+            const sensorRef = database.ref('/IR_Sensor');
+
+            sensorRef.on('value', (snapshot) => {
+                // Hide error on success
+                errorContainer.style.display = 'none';
+
+                const data = snapshot.val();
+                if (!data) {
+                    // No data yet
+                    irValueDisplay.textContent = '—';
+                    statusDisplay.textContent = '—';
+                    timestampDisplay.textContent = '—';
+                    timestampDetailed.textContent = '—';
+                    statusBadgeContainer.innerHTML = '';
+                    lastUpdatedSpan.textContent = 'no data yet';
+                    return;
+                }
+
+                // Extract fields with default fallbacks
+                const irValue = data.value !== undefined ? data.value : null;
+                const status = data.status !== undefined ? data.status : null;
+                const timestamp = data.timestamp !== undefined ? data.timestamp : null;
+
+                // Update value display
+                if (irValue !== null) {
+                    irValueDisplay.textContent = irValue;
+                } else {
+                    irValueDisplay.textContent = '—';
+                }
+
+                // Update status display
+                if (status !== null) {
+                    statusDisplay.textContent = status;
+                    // Create badge
+                    let badgeClass = '';
+                    if (status === 'DETECTED') {
+                        badgeClass = 'status-badge status-detected';
+                    } else if (status === 'NOT_DETECTED') {
+                        badgeClass = 'status-badge status-notdetected';
+                    } else {
+                        badgeClass = 'status-badge';
+                    }
+                    statusBadgeContainer.innerHTML = `<span class="${badgeClass}">${status}</span>`;
+                } else {
+                    statusDisplay.textContent = '—';
+                    statusBadgeContainer.innerHTML = '';
+                }
+
+                // Update timestamp displays
+                if (timestamp !== null) {
+                    timestampDisplay.textContent = timestamp;
+                    timestampDetailed.textContent = timestamp;
+                } else {
+                    timestampDisplay.textContent = '—';
+                    timestampDetailed.textContent = '—';
+                }
+
+                // Update last updated time (using local time)
+                updateLastUpdatedTime(new Date());
+            }, (error) => {
+                // Handle permission or network error
+                console.error('Firebase read error:', error);
+                errorContainer.style.display = 'flex';
+                errorText.textContent = `Firebase error: ${error.message} (check rules / connection)`;
+                // set connection badge to offline?
+                connectionBadge.classList.add('offline');
+                connectionText.textContent = 'Error';
+                connectionIcon.style.color = '#b91c1c';
+                liveIndicator.style.display = 'none';
+            });
+
+            // Also, if we want to force an initial load, the listener does it automatically.
+            // Set initial last updated text.
+            lastUpdatedSpan.textContent = 'listening...';
+
+            // Reconnect handling: firebase compat automatically handles reconnect.
+            // We can also listen for errors in the sensor ref.
+            // Add an extra error listener to catch any permission issues.
+        })();
+    </script>
+</body>
+</html>
